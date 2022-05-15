@@ -12,6 +12,7 @@
 #include "RainbowAnimation.h"
 #include "Blaulicht.h"
 #include "WhiteStrobo.h"
+#include "ColorStrobo.h"
 #include "FillRed.h"
 #include "FillGreen.h"
 #include "FillBlue.h"
@@ -24,6 +25,7 @@ const animation_info_t animations[] = {
   { RainbowAnimation, "Rainbow"},
   { Blaulicht, "Blaulicht"},
   { WhiteStrobo, "WhiteStrobo"},
+  { ColorStrobo, "ColorStrobo"},
   { FillRed, "FillRed"},
   { FillGreen, "FillGreen"},
   { FillBlue, "FillBlue"},
