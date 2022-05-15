@@ -33,7 +33,7 @@ const animation_info_t animations[] = {
 };
 
 uint8_t current_animation = 0;
-uint8_t level = MAX_LEVELS;
+uint8_t brightness = 255;
 
 uint32_t block_brightness_button = 0;
 bool brightness_button_pressed = false;
@@ -53,22 +53,21 @@ void setup()
   // init fastled
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT);
   fill_rainbow(leds, LED_COUNT, 0);
-  FastLED.setBrightness((level * 255) / MAX_LEVELS);
+  FastLED.setBrightness(255);
   FastLED.show();
   delay(100);
 }
 
 void nextBrightness()
 {
-  if (level > 0)
-  {
-    level--;
-  }
+  if (brightness > 3)
+    brightness /= 2;
+  else if (brightness == 0)
+    brightness = 255;
   else
-  {
-    level = MAX_LEVELS;
-  }
-  FastLED.setBrightness((level * 255) / MAX_LEVELS);
+    brightness = 0;
+
+  FastLED.setBrightness(brightness);
   FastLED.show();
 }
 
