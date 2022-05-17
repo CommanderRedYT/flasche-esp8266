@@ -2,6 +2,7 @@
 
 // 3rdparty lib includes
 #include <Arduino.h>
+#include <NeoPixelBus.h>
 #include <FastLED.h>
 
 // local includes
@@ -15,12 +16,12 @@ void Blaulicht() {
         if (index++ > LED_COUNT) {
             index = 0;
         }
-        leds[index] = CRGB::Red;
-        leds[(index + LED_COUNT / 2) % LED_COUNT] = CRGB::Blue;
+        strip.SetPixelColor(index, RgbColor{255, 0, 0});
+        strip.SetPixelColor((index + LED_COUNT / 2) % LED_COUNT, RgbColor{0, 0, 255});
     }
 
     EVERY_N_MILLIS(1)
     {
-        fadeToBlackBy(leds, LED_COUNT, 1);
+        fadeToBlackBy(strip, 1);
     }
 }

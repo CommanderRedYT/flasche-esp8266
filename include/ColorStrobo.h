@@ -2,6 +2,7 @@
 
 // 3rdparty lib includes
 #include <Arduino.h>
+#include <NeoPixelBus.h>
 #include <FastLED.h>
 
 // local includes
@@ -9,12 +10,12 @@
 
 
 void ColorStrobo() {
-    static const CRGB colors[] = { CRGB::Red, CRGB::Green, CRGB::Blue };
+    static const RgbColor colors[] = { RgbColor{255, 0, 0}, RgbColor{0, 255, 0}, RgbColor{0, 0, 255} };
 
-    static int strobe = 0;
+    static uint8_t strobe = 0;
     EVERY_N_MILLIS(50)
     {
-        fill_solid(leds, LED_COUNT, colors[strobe]);
+        fill_solid(strip, LED_COUNT, colors[strobe]);
         strobe++;
         if (strobe >= std::size(colors))
             strobe = 0;

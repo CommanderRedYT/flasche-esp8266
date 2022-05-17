@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 // 3rdparty lib includes
+#include <NeoPixelBus.h>
 #include <FastLED.h>
 
 // local includes
@@ -17,6 +18,6 @@ void RainbowAnimation() {
         if (index++ > 255) {
             index = 0;
         }
-        fill_rainbow(leds, LED_COUNT, index, 7);
+        fill_rainbow(strip, 0, LED_COUNT, index, 7);
     }
 }

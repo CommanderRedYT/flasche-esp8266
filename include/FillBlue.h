@@ -2,6 +2,7 @@
 
 // 3rdparty lib includes
 #include <Arduino.h>
+#include <NeoPixelBus.h>
 #include <FastLED.h>
 
 // local includes
@@ -10,6 +11,6 @@
 void FillBlue() {
     EVERY_N_MILLIS(100)
     {
-        fill_solid(leds, LED_COUNT, CRGB::Blue);
+        fill_solid(strip, LED_COUNT, RgbColor{0, 0, 255});
     }
 }

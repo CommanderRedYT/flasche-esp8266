@@ -2,6 +2,7 @@
 
 // 3rdparty lib includes
 #include <Arduino.h>
+#include <NeoPixelBus.h>
 #include <FastLED.h>
 
 // local includes
@@ -11,7 +12,7 @@ void WhiteStrobo() {
     static bool strobe = false;
     EVERY_N_MILLIS(50)
     {
-        fill_solid(leds, LED_COUNT, strobe ? CRGB::White : CRGB::Black);
+        fill_solid(strip, LED_COUNT, strobe ? RgbColor{255, 255, 255} : RgbColor{0, 0, 0});
         strobe = !strobe;
     }
 }
