@@ -59,6 +59,12 @@ bool updateFromUrl(std::string url)
             static uint8_t animation_index = 0;
             EVERY_N_MILLIS(50) {
                 const auto percentage = Update.progress() * 100 / total_size;
+
+                if (percentage % 10 == 0)
+                {
+                    Serial.printf("Downloaded %d%%\n", percentage);
+                }
+
                 animation_index++;
                 if (animation_index >= strip.PixelCount() / 2)
                 {
