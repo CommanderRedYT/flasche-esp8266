@@ -1,3 +1,5 @@
+#include <fmt/core.h>
+
 #include "ESPOta.h"
 
 #include <Arduino.h>
@@ -28,7 +30,7 @@ bool updateFromUrl(std::string url)
     }
     ESPOta::updateAvailable = false;
     ESPOta::updating = true;
-    Serial.printf("Updating from %s\n", url.c_str());
+    Serial.println(fmt::format("Updating from {}", url).c_str());
 
     ota_http.begin(ota_wifi_client, url.c_str());
     int httpCode = ota_http.GET();
@@ -45,7 +47,7 @@ bool updateFromUrl(std::string url)
         }
 
         Update.begin(total_size);
-        Serial.printf("Downloading %d bytes\n", total_size);
+        Serial.println(fmt::format("Downloading {} bytes", total_size).c_str());
         uint8_t buff[128] = {0};
 
         WiFiClient* stream = ota_http.getStreamPtr();
@@ -62,7 +64,7 @@ bool updateFromUrl(std::string url)
 
                 if (percentage % 10 == 0)
                 {
-                    Serial.printf("Downloaded %d%%\n", percentage);
+                    Serial.println(fmt::format("Downloaded {}%", percentage).c_str());
                 }
 
                 animation_index++;
@@ -106,7 +108,7 @@ bool updateFromUrl(std::string url)
     }
     else
     {
-        Serial.printf("HTTP error %d\n", httpCode);
+        Serial.println(fmt::format("HTTP error {}", httpCode).c_str());
         ESPOta::updating = false;
         return false;
     }
@@ -120,18 +122,17 @@ void checkForUpdates()
     using namespace ESPOta;
     // check if http://lamps.bobbycar.cloud/firmwares/check/<GIT_HASH> returns status code 200. If so, updateAvailable is true.
 
-    char url[89];
-    snprintf(url, 89, "http://lamps.bobbycar.cloud/firmwares/check/%s", GIT_HASH);
-    Serial.printf("Checking for updates at %s\n", url);
+    std::string url = fmt::format("http://lamps.bobbycar.cloud/firmwares/check/{}", GIT_HASH);
+    Serial.println(fmt::format("Checking for updates at {}", url).c_str());
 
-    ota_http.begin(ota_wifi_client, url);
+    ota_http.begin(ota_wifi_client, url.c_str());
     int httpCode = ota_http.GET();
 
     if (httpCode == HTTP_CODE_OK) {
         Serial.println("Update available");
         ESPOta::updateAvailable = true;
     } else {
-        Serial.printf("Update not available (http code %d)\n", httpCode);
+        Serial.println(fmt::format("Update not available (http code {})", httpCode).c_str());
     }
 
     ota_http.end();

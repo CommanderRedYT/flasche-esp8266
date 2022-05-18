@@ -1,3 +1,5 @@
+#include <fmt/core.h>
+
 #include <Arduino.h>
 
 // system includes
@@ -104,11 +106,11 @@ void setup()
   }
   else
   {
-    Serial.printf("AP SSID: %s\n", WiFi.softAPSSID().c_str());
+    Serial.println(fmt::format("AP IP: {}", WiFi.softAPIP().toString().c_str()).c_str());
   }
   Serial.println("DEBUG: Boot Successful");
 
-  Serial.printf("Connecting to WiFi \"%s\"...\n", config.wifi_sta.ssid, config.wifi_sta.password);
+  Serial.println(fmt::format("Connecting to WiFi \"{}\"...", config.wifi_sta.ssid).c_str());
   WiFi.begin(config.wifi_sta.ssid, config.wifi_sta.password);
   WiFi.setHostname(config.wifi_ap.ssid);
   WiFi.setAutoConnect(true);
@@ -116,7 +118,7 @@ void setup()
 
   // init http server
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(200, "text/html", html::index_html);
+    request->send(200, "text/html", fmt::format(html::index_html).c_str());
   });
 
   server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -131,9 +133,8 @@ void setup()
   });
 
   server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* request) {
-    char buffer[strlen(html::settings_html) + sizeof(config_t)];
-    sprintf(buffer, html::settings_html, config.brightness.value, config.animation.value, sizeof(animations) / sizeof(animations[0]) - 1, config.wifi_sta.ssid, config.wifi_sta.password, config.wifi_ap.ssid, config.wifi_ap.password, config.ota_url);
-    request->send(200, "text/html", buffer);
+    const std::string html = fmt::format(html::settings_html, config.brightness.value, config.animation.value, sizeof(animations) / sizeof(animations[0]) - 1, config.wifi_sta.ssid, config.wifi_sta.password, config.wifi_ap.ssid, config.wifi_ap.password, config.ota_url);
+    request->send(200, "text/html", html.c_str());
   });
 
   server.on("/brightness", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -147,7 +148,8 @@ void setup()
       save_nvs(config);
     }
 
-    request->redirect("/settings");
+    const auto referer = request->getHeader("referer")->value().c_str();
+    request->redirect(referer);
   });
 
   server.on("/animation", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -161,7 +163,8 @@ void setup()
       save_nvs(config);
     }
 
-    request->redirect("/settings");
+    const auto referer = request->getHeader("referer")->value().c_str();
+    request->redirect(referer);
   });
 
   server.on("/sta_ssid", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -226,7 +229,7 @@ void setup()
     if (request->hasParam("url"))
     {
       const auto decoded = request->getParam("url")->value().c_str();
-      Serial.printf("Update firmware from %s\n", decoded);
+      Serial.println(fmt::format("Update firmware from {}", decoded).c_str());
       updateFromUrl(decoded);
     }
 
@@ -244,6 +247,18 @@ void setup()
     }
 
     request->redirect("/settings");
+  });
+
+  server.on("/animations", HTTP_GET, [](AsyncWebServerRequest* request) {
+    std::string options;
+    for (auto i = 0; i < std::size(animations); i++)
+    {
+      std::string option = fmt::format("<option value=\"{}\" {}>{}</option>", i, i == current_animation ? "selected" : "", animations[i].name.c_str());
+      options += option;
+    }
+    
+    const std::string html = fmt::format(html::animations_html, options);
+    request->send(200, "text/html", html.c_str());
   });
 
   server.begin();
@@ -327,7 +342,7 @@ void handleButtons()
 
     if (ESPOta::updateAvailable)
     {
-      Serial.printf("Updating firmware (%s)\n", config.ota_url);
+      Serial.println(fmt::format("Updating firmware from {}", config.ota_url).c_str());
       updateFromUrl(config.ota_url);
     }
     else if (ESPOta::updating)
@@ -385,7 +400,7 @@ void loop()
   if (!wifi_connected && WiFi.status() == WL_CONNECTED)
   {
     wifi_connected = true;
-    Serial.printf("Connected to WiFi. Serving at http://%s\n", WiFi.localIP().toString().c_str());
+    Serial.println(fmt::format("Connected to WiFi. Serving at http://{}", WiFi.localIP().toString().c_str()).c_str());
     checkForUpdates();
   }
 

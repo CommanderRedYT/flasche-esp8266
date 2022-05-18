@@ -1,5 +1,7 @@
-#include "NvsWrapper.h"
+#include <fmt/core.h>
 
+#include "NvsWrapper.h"
+ 
 std::string default_ssid()
 {
   char ap_ssid[22];
