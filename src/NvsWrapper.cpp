@@ -39,7 +39,7 @@ void load_nvs(config_t &config)
     used_defaults = used_defaults || true;
   }
 
-  if (strcmp(config.ota_url_valid, "OK") == 0) {
+  if (strcmp(config.ota_url_valid, "OK") == 0 || std::string{config.ota_url}.length() < 10) { // if ota_url_valid is not OK, or ota_url is empty
     strcpy(config.ota_url, "http://lamps.bobbycar.cloud/firmwares/latest.bin");
     Serial.println("No ota url found in nvs, using default");
     strcpy(config.ota_url_valid, "OK");
