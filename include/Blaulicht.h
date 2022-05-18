@@ -18,10 +18,6 @@ void Blaulicht() {
         }
         strip.SetPixelColor(index, RgbColor{255, 0, 0});
         strip.SetPixelColor((index + LED_COUNT / 2) % LED_COUNT, RgbColor{0, 0, 255});
-    }
-
-    EVERY_N_MILLIS(1)
-    {
-        fadeToBlackBy(strip, 1);
+        fadeToBlackBy(strip, 30);
     }
 }
