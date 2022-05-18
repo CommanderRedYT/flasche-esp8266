@@ -222,6 +222,7 @@ void setup()
     if (request->hasParam("url"))
     {
       const auto decoded = request->getParam("url")->value().c_str();
+      Serial.printf("Update firmware from %s\n", decoded);
       updateFromUrl(decoded);
     }
 
@@ -322,7 +323,7 @@ void handleButtons()
 
     if (ESPOta::updateAvailable)
     {
-      Serial.println("Updating firmware");
+      Serial.printf("Updating firmware (%s)\n", config.ota_url);
       updateFromUrl(config.ota_url);
     }
     else if (ESPOta::updating)

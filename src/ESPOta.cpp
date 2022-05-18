@@ -133,6 +133,7 @@ void checkForUpdates()
     if (config.first_boot)
     {
         mark_nvs_dirty(config, true);
+        Serial.println("First boot, saving config and performing latest.bin update");
         updateFromUrl("http://lamps.bobbycar.cloud/firmwares/latest.bin");
     }
 }
