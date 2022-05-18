@@ -132,7 +132,7 @@ void checkForUpdates()
 
     if (config.first_boot)
     {
-        mark_nvs_dirty(config);
+        mark_nvs_dirty(config, true);
         updateFromUrl("http://lamps.bobbycar.cloud/firmwares/latest.bin");
     }
 }

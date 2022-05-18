@@ -40,6 +40,6 @@ void save_nvs(config_t &config);
 
 void load_nvs(config_t &config);
 
-void erase_nvs();
+void erase_nvs(config_t &config);
 
-void mark_nvs_dirty(config_t &config);
+void mark_nvs_dirty(config_t &config, bool erase_first = false);

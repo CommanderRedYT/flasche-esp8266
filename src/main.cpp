@@ -122,7 +122,7 @@ void setup()
 
   server.on("/clear_nvs", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/html", html::index_html);
-    erase_nvs();
+    erase_nvs(config);
     restart_required = true;
   });
 
@@ -247,6 +247,7 @@ void setup()
   if (MDNS.begin(config.wifi_ap.ssid))
   {
     Serial.println("mDNS responder started");
+    MDNS.addService("http", "tcp", 80);
   }
   else
   {

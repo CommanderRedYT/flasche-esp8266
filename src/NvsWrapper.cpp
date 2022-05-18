@@ -64,7 +64,7 @@ void load_nvs(config_t &config)
   }
 }
 
-void erase_nvs()
+void erase_nvs(config_t &config)
 {
   EEPROM.begin(4096);
   Serial.println("Erasing nvs");
@@ -76,13 +76,22 @@ void erase_nvs()
   Serial.println(EEPROM.commit() ? "Erased" : "Failed to erase");
   EEPROM.end();
 
-  config_t config;
   config.first_boot = true;
   save_nvs(config);
 }
 
-void mark_nvs_dirty(config_t &config)
+void mark_nvs_dirty(config_t &config, bool erase_first)
 {
-  config.first_boot = false;
-  save_nvs(config);
+    if (erase_first)
+    {
+        erase_nvs(config);
+        config = {.first_boot = false};
+        save_nvs(config);
+        ESP.restart();
+    }
+    else
+    {
+        config.first_boot = false;
+        save_nvs(config);
+    }
 }
