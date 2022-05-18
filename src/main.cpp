@@ -13,6 +13,7 @@
 #include <WiFiClient.h>
 
 // local includes
+#include "ESPOta.h"
 #include "led.h"
 #include "NvsWrapper.h"
 
@@ -50,7 +51,6 @@ const animation_info_t animations[] = {
 };
 
 uint8_t current_animation{0};
-uint8_t brightness{255};
 
 uint32_t block_brightness_button{0};
 bool brightness_button_pressed{false};
@@ -60,6 +60,7 @@ bool animation_button_pressed{false};
 
 bool debug_print{false};
 bool wifi_connected{false};
+bool restart_required{false};
 
 void setup()
 {
@@ -90,7 +91,7 @@ void setup()
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(config.wifi_ap.ssid, config.wifi_ap.password);
 
-  delay(50);
+  delay(100);
 
   if (digitalRead(PIN_ANIMATION) || digitalRead(PIN_BRIGHTNESS))
   {
@@ -101,11 +102,9 @@ void setup()
   {
     Serial.printf("AP SSID: %s\n", WiFi.softAPSSID().c_str());
   }
-
-  delay(500);
   Serial.println("DEBUG: Boot Successful");
 
-  Serial.printf("Connecting to WiFi \"%s\"\n", config.wifi_sta.ssid, config.wifi_sta.password);
+  Serial.printf("Connecting to WiFi \"%s\"...\n", config.wifi_sta.ssid, config.wifi_sta.password);
   WiFi.begin(config.wifi_sta.ssid, config.wifi_sta.password);
   WiFi.setHostname(config.wifi_ap.ssid);
   WiFi.setAutoConnect(true);
@@ -116,9 +115,20 @@ void setup()
     request->send(200, "text/html", html::index_html);
   });
 
+  server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", html::index_html);
+    restart_required = true;
+  });
+
+  server.on("/clear_nvs", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", html::index_html);
+    erase_nvs();
+    restart_required = true;
+  });
+
   server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* request) {
-    char buffer[strlen(html::settings_html) + 60];
-    sprintf(buffer, html::settings_html, config.brightness.value, config.animation.value, sizeof(animations) / sizeof(animations[0]) - 1, config.wifi_sta.ssid, config.wifi_sta.password, config.wifi_ap.ssid, config.wifi_ap.password);
+    char buffer[strlen(html::settings_html) + sizeof(config_t)];
+    sprintf(buffer, html::settings_html, config.brightness.value, config.animation.value, sizeof(animations) / sizeof(animations[0]) - 1, config.wifi_sta.ssid, config.wifi_sta.password, config.wifi_ap.ssid, config.wifi_ap.password, config.ota_url);
     request->send(200, "text/html", buffer);
   });
 
@@ -128,7 +138,6 @@ void setup()
     if (request->hasParam("brightness"))
     {
       const auto decoded = request->getParam("brightness")->value().toInt();
-      brightness = decoded;
       config.brightness.value = decoded;
       strip.SetBrightness(config.brightness.value);
       save_nvs(config);
@@ -162,7 +171,7 @@ void setup()
     }
 
     request->redirect("/settings");
-    ESP.restart();
+    restart_required = true;
   });
 
   server.on("/sta_password", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -176,7 +185,7 @@ void setup()
     }
 
     request->redirect("/settings");
-    ESP.restart();
+    restart_required = true;
   });
 
   server.on("/ap_ssid", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -190,7 +199,7 @@ void setup()
     }
 
     request->redirect("/settings");
-    ESP.restart();
+    restart_required = true;
   });
 
   server.on("/ap_password", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -204,7 +213,32 @@ void setup()
     }
 
     request->redirect("/settings");
-    ESP.restart();
+    restart_required = true;
+  });
+
+  server.on("/manual_update", HTTP_GET, [](AsyncWebServerRequest* request) {
+    // update firmware
+
+    if (request->hasParam("url"))
+    {
+      const auto decoded = request->getParam("url")->value().c_str();
+      updateFromUrl(decoded);
+    }
+
+    request->redirect("/");
+  });
+
+  server.on("/update_url", HTTP_GET, [](AsyncWebServerRequest* request) {
+    // set update url, save nvs and redirect to /settings
+
+    if (request->hasParam("update_url"))
+    {
+      const auto decoded = request->getParam("update_url")->value().c_str();
+      strcpy(config.ota_url, decoded);
+      save_nvs(config);
+    }
+
+    request->redirect("/settings");
   });
 
   server.begin();
@@ -222,15 +256,14 @@ void setup()
 
 void nextBrightness()
 {
-  if (brightness > 3)
-    brightness /= 2;
-  else if (brightness == 0)
-    brightness = 255;
+  if (config.brightness.value > 3)
+    config.brightness.value /= 2;
+  else if (config.brightness.value == 0)
+    config.brightness.value = 255;
   else
-    brightness = 0;
+    config.brightness.value = 0;
 
-  strip.SetBrightness(brightness);
-  config.brightness.value = brightness;
+  strip.SetBrightness(config.brightness.value);
   save_nvs(config);
   strip.Show();
 }
@@ -244,7 +277,37 @@ void handleLeds()
     config.animation.value = 0;
     save_nvs(config);
   }
-  animations[current_animation].animation();
+  if (ESPOta::updateAvailable)
+  {
+    static bool update_blink = false;
+    // leds 1-17 and all others red
+    EVERY_N_MILLIS(100) {
+      for (uint32_t i = 0; i < strip.PixelCount(); i++)
+      {
+        strip.SetPixelColor(i, i < 16 ? RgbColor{0, 255, 0} : RgbColor{255, 0, 0}); // animation = red, brightness = green
+      }
+
+      if (update_blink)
+      {
+        for (uint32_t i = 7; i <= 9; i++)
+        {
+          strip.SetPixelColor(i, RgbColor{255, 255, 0});
+        }
+        for (uint32_t i = 23; i <= 25; i++)
+        {
+          strip.SetPixelColor(i, RgbColor{255, 255, 0});
+        }
+      }
+    }
+
+    EVERY_N_MILLIS(500) {
+      update_blink = !update_blink;
+    }
+  }
+  else
+  {
+    animations[current_animation].animation();
+  }
 }
 
 void handleButtons()
@@ -255,7 +318,21 @@ void handleButtons()
   if (brightness_button_pressed_now && !brightness_button_pressed && now > block_brightness_button)
   {
     block_brightness_button = now + BUTTON_DEBOUNCE_DELAY;
-    nextBrightness();
+
+    if (ESPOta::updateAvailable)
+    {
+      Serial.println("Updating firmware");
+      updateFromUrl(config.ota_url);
+    }
+    else if (ESPOta::updating)
+    {
+
+    }
+    else
+    {
+      nextBrightness();
+    }
+
     brightness_button_pressed = brightness_button_pressed_now;
   }
   else if (!brightness_button_pressed_now && brightness_button_pressed && now > block_brightness_button)
@@ -269,9 +346,22 @@ void handleButtons()
   if (animation_button_pressed_now && !animation_button_pressed && now > block_animation_button)
   {
     block_animation_button = now + BUTTON_DEBOUNCE_DELAY;
-    current_animation++;
-    config.animation.value = current_animation;
-    save_nvs(config);
+
+    if (ESPOta::updateAvailable)
+    {
+      ESPOta::updateAvailable = false;
+      Serial.println("Cancelling firmware update");
+    }
+    else if (ESPOta::updating)
+    {
+      // do nothing
+    }
+    else
+    {
+      current_animation++;
+      config.animation.value = current_animation;
+      save_nvs(config);
+    }
     animation_button_pressed = animation_button_pressed_now;
   }
   else if (!animation_button_pressed_now && animation_button_pressed && now > block_animation_button)
@@ -290,6 +380,7 @@ void loop()
   {
     wifi_connected = true;
     Serial.printf("Connected to WiFi. Serving at http://%s\n", WiFi.localIP().toString().c_str());
+    checkForUpdates();
   }
 
   if (strip.CanShow())
@@ -300,5 +391,12 @@ void loop()
       Serial.println("DEBUG: Render successful");
       debug_print = true;
     }
+  }
+
+  if (restart_required)
+  {
+    Serial.println("Restarting...");
+    delay(1000);
+    ESP.restart();
   }
 }

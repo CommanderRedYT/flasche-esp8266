@@ -23,6 +23,9 @@ typedef struct {
     char valid[3];
   } wifi_ap;
 
+  char ota_url[64];
+  char ota_url_valid[3];
+
   NvsItem<uint8_t> brightness;
   NvsItem<uint8_t> animation;
 } config_t;
@@ -66,12 +69,16 @@ void load_nvs(config_t &config)
     used_defaults = used_defaults || true;
   }
 
-  Serial.printf("brightness: %d (touched: %s)\n", config.brightness.value, config.brightness.touched ? "true" : "false");
-  Serial.printf("animation: %d (touched: %s)\n", config.animation.value, config.animation.touched ? "true" : "false");
+  if (strcmp(config.ota_url_valid, "OK") == 0) {
+    strcpy(config.ota_url, "http://lamps.bobbycar.cloud/firmwares/latest.bin");
+    Serial.println("No ota url found in nvs, using default");
+    strcpy(config.ota_url_valid, "OK");
+    used_defaults = used_defaults || true;
+  }
 
   if (!config.brightness.touched && config.brightness.value == 0)
   {
-    config.brightness.value = 255;
+    config.brightness.value = 80;
     Serial.println("No brightness found in nvs, using default");
     used_defaults = used_defaults || true;
   }

@@ -26,8 +26,8 @@
     "<footer>" \
         "<hr>" \
         "<a href=\"https://github.com/bobbycar-graz/flasche-esp8266\">View on GitHub</a> | " \
-        "Special thanks to <a href=\"https://github.com/CommanderRedYT\">CommanderRedYT</a> for programming the ESP8266 and" \
-        "<a href=\"https://github.com/mickdermack\"> mickdermack</a> for providing animations and fixing the code!" \
+        "Special thanks to <a href=\"https://github.com/CommanderRedYT\">CommanderRedYT</a> for programming the ESP8266 and " \
+        "<a href=\"https://github.com/mickdermack\">mickdermack</a> for providing animations and fixing the code!" \
     "</footer>" \
     "</body></html>"
 
@@ -88,6 +88,11 @@ const static char *settings_html PROGMEM = HTML_CODE(R"=====(
     <form action="/update">
         <label for="update">Update from URL:</label>
         <input type="text" name="update" placeholder="Enter OTA URL (http) here" id="update" />
+        <input type="submit" value="Update" />
+    </form>
+    <form action="/update_url">
+        <label for="update_url">Default OTA URL:</label>
+        <input type="text" name="update_url" placeholder="Enter default OTA URL (http) here" value="%s" id="update_url" />
         <input type="submit" value="Save" />
     </form>
 )=====");
