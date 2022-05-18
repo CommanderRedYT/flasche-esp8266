@@ -332,7 +332,7 @@ void handleButtons()
     }
     else if (ESPOta::updating)
     {
-
+      // do nothing
     }
     else
     {
