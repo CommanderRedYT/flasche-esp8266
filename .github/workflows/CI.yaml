@@ -3,7 +3,7 @@ name: PlatformIO CI
 on: [push]
 
 jobs:
-  build:
+  Build-And-Upload:
 
     runs-on: ubuntu-latest
 
@@ -28,4 +28,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio run
+      run: |
+        pio run
+        ls -lah .pio/build
