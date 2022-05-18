@@ -26,7 +26,7 @@ def upload_file(file_path, password):
     print(commit_hash)
 
     # get the server password
-    if not password and password == "":
+    if not password or password == "":
         password = getpass('Server password: ')
 
     url = "https://lamps.bobbycar.cloud/upload-firmware"
