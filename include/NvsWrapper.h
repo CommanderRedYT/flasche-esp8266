@@ -28,83 +28,18 @@ typedef struct {
 
   NvsItem<uint8_t> brightness;
   NvsItem<uint8_t> animation;
+
+  bool first_boot{true};
 } config_t;
 
-std::string default_ssid()
-{
-  char ap_ssid[22];
-  snprintf(ap_ssid, 22, "GPN-LAMP-%06X", ESP.getChipId());
-  return ap_ssid;
-}
+extern config_t config;
 
-void save_nvs(config_t &config)
-{
-  EEPROM.begin(4096);
-  EEPROM.put(0, config);
-  Serial.println(EEPROM.commit() ? "Saved" : "Failed to save");
-  EEPROM.end();
-}
+std::string default_ssid();
 
-void load_nvs(config_t &config)
-{
-  EEPROM.begin(4096);
-  EEPROM.get(0, config);
-  EEPROM.end();
+void save_nvs(config_t &config);
 
-  bool used_defaults = false;
+void load_nvs(config_t &config);
 
-  if (strcmp(config.wifi_sta.valid, "OK\0") != 0) {
-    strcpy(config.wifi_sta.ssid, "bobbycar");
-    strcpy(config.wifi_sta.password, "12345678");
-    Serial.println("No sta ssid found in nvs, using default");
-    strcpy(config.wifi_sta.valid, "OK");
-    used_defaults = used_defaults || true;
-  }
+void erase_nvs();
 
-  if (strcmp(config.wifi_ap.valid, "OK") != 0) {
-    strcpy(config.wifi_ap.ssid, default_ssid().c_str());
-    strcpy(config.wifi_ap.password, "12345678");
-    Serial.println("No ap ssid found in nvs, using default");
-    strcpy(config.wifi_ap.valid, "OK");
-    used_defaults = used_defaults || true;
-  }
-
-  if (strcmp(config.ota_url_valid, "OK") == 0) {
-    strcpy(config.ota_url, "http://lamps.bobbycar.cloud/firmwares/latest.bin");
-    Serial.println("No ota url found in nvs, using default");
-    strcpy(config.ota_url_valid, "OK");
-    used_defaults = used_defaults || true;
-  }
-
-  if (!config.brightness.touched && config.brightness.value == 0)
-  {
-    config.brightness.value = 80;
-    Serial.println("No brightness found in nvs, using default");
-    used_defaults = used_defaults || true;
-  }
-
-  if (used_defaults)
-  {
-    Serial.println("Loaded, Saving defaults");
-    save_nvs(config);
-  }
-  else
-  {
-    Serial.println("Loaded, No Defaults used");
-  }
-}
-
-void erase_nvs()
-{
-  EEPROM.begin(4096);
-
-  Serial.println("Erasing nvs");
-  
-  for (int i = 0; i < 4096; i++) {
-    EEPROM.write(i, 0);
-  }
-
-  Serial.println(EEPROM.commit() ? "Erased" : "Failed to erase");
-
-  EEPROM.end();
-}
+void mark_nvs_dirty(config_t &config);

@@ -7,6 +7,7 @@
 #include <FastLED.h>
 
 #include "led.h"
+#include "NvsWrapper.h"
 
 namespace ESPOta {
 bool updateAvailable{false};
@@ -128,4 +129,10 @@ void checkForUpdates()
     }
 
     ota_http.end();
+
+    if (config.first_boot)
+    {
+        mark_nvs_dirty(config);
+        updateFromUrl("http://lamps.bobbycar.cloud/firmwares/latest.bin");
+    }
 }
