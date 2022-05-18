@@ -97,6 +97,10 @@ void setup()
   {
     Serial.println("Deactivate AP");
     WiFi.mode(WIFI_STA);
+    block_animation_button = millis() + 1000;
+    animation_button_pressed = true;
+    block_brightness_button = millis() + 1000;
+    brightness_button_pressed = true;
   }
   else
   {
@@ -401,4 +405,5 @@ void loop()
     delay(1000);
     ESP.restart();
   }
+  delay(0);
 }
