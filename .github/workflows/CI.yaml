@@ -30,4 +30,6 @@ jobs:
     - name: Run PlatformIO
       run: pio run
     - name: Upload
-      run: ./upload-bin.py --password "Foo"
+      env: 
+        key: ${{ secrets.UPLOAD_KEY }}
+      run: ./upload-bin.py --password $key
