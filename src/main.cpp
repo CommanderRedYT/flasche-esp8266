@@ -29,6 +29,7 @@
 #include "FillGreen.h"
 #include "FillBlue.h"
 #include "FillRainbow.h"
+#include "RainbowSpinner.h"
 
 // webserver
 #include "html.h"
@@ -50,6 +51,7 @@ const animation_info_t animations[] = {
   { FillGreen, "FillGreen"},
   { FillBlue, "FillBlue"},
   { FillRainbow, "FillRainbow"},
+  { RainbowSpinner, "RainbowSpinner"},
 };
 
 uint8_t current_animation{0};
